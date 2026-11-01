@@ -6,6 +6,7 @@ import re
 import shutil
 import signal
 import subprocess
+import sys
 import tempfile
 import threading
 import time
@@ -16,13 +17,23 @@ from typing import Callable, Mapping
 
 @dataclass(frozen=True)
 class CliSpec:
+    key: str
     name: str
     env: str
-    install: str
+    package: str  # ノード専用の仮想環境に入れるもの（版を固定する）
 
 
-MFLUX = CliSpec("mflux-generate-moss-image", "MOSS_MFLUX_BIN", "uv tool install git+https://github.com/mflux-community/mflux")
-FELIX = CliSpec("moss-mlx", "MOSS_FELIX_BIN", "uv tool install moss-image-mlx")
+# mflux は PyPI の 0.24.0 だと長いプロンプトで NaN（真っ黒）になる。修正の入った main のコミットに固定する
+MFLUX = CliSpec("mflux", "mflux-generate-moss-image", "MOSS_MFLUX_BIN",
+                "mflux @ git+https://github.com/mflux-community/mflux@54619d6288a6c90dcdfbee7a9555382ae46ccb92")
+FELIX = CliSpec("felix", "moss-mlx", "MOSS_FELIX_BIN", "moss-image-mlx==0.2.0")
+
+NODE_DIR = Path(__file__).resolve().parent
+# Comfy Desktop に同梱されている uv
+DESKTOP_UV = ("/Applications/Comfy Desktop.app/Contents/Resources/bootstrap-python/bin/uv",)
+VENV_PYTHON = "3.12"  # uv で作るときの Python。ComfyUI の Python が更新されても影響を受けない
+MARKER = ".moss-installed"
+_AUTO = object()  # resolve_bin の uv を自動で探す印
 
 
 class CliNotFound(RuntimeError):
@@ -47,8 +58,64 @@ def find_bin(spec: CliSpec, env: Mapping[str, str] = os.environ, home: Path = Pa
     local = home / ".local" / "bin" / spec.name
     if local.is_file() and os.access(local, os.X_OK):
         return str(local)
-    raise CliNotFound(f"{spec.name} が見つかりません。次のコマンドで入れてください: {spec.install}"
-                      f"（別の場所にあるなら環境変数 {spec.env} にパスを設定）")
+    raise CliNotFound(f"{spec.name} が見つかりません")
+
+
+def find_uv(env: Mapping[str, str] = os.environ, candidates: tuple[str, ...] = DESKTOP_UV) -> str | None:
+    """環境変数 MOSS_UV → PATH → Comfy Desktop 同梱の uv の順に探す"""
+    if env.get("MOSS_UV"):
+        return env["MOSS_UV"]
+    found = shutil.which("uv", path=env.get("PATH", ""))
+    if found:
+        return found
+    return next((c for c in candidates if os.access(c, os.X_OK)), None)
+
+
+def ensure_venv(spec: CliSpec, root: Path, *, uv: str | None, python: str = sys.executable,
+                on_log: Callable[[str], None] = print) -> str:
+    """root/.venv-<key> に CLI を入れて、そのパスを返す。入れ終わった印（MARKER）が無いか、
+    中身が違うか、python が動かなければ作り直す。ComfyUI の Python 環境には何も入れない。"""
+    venv = root / f".venv-{spec.key}"
+    py, cli, marker = venv / "bin" / "python", venv / "bin" / spec.name, venv / MARKER
+    if marker.is_file() and marker.read_text().strip() == spec.package and cli.is_file() and _runs(py):
+        return str(cli)
+    on_log(f"[MOSS Image] {spec.name} をノード専用の環境に入れます（初回のみ、数分かかります）: {venv}")
+    shutil.rmtree(venv, ignore_errors=True)
+    if uv:
+        steps = [[uv, "venv", str(venv), "--python", VENV_PYTHON],
+                 [uv, "pip", "install", "--python", str(py), spec.package]]
+    else:
+        steps = [[python, "-m", "venv", str(venv)],
+                 [str(py), "-m", "pip", "install", spec.package]]
+    for argv in steps:
+        r = subprocess.run(argv, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, errors="replace")
+        for line in r.stdout.splitlines():
+            on_log(f"[MOSS Image] {line}")
+        if r.returncode != 0:
+            tail = "\n".join(r.stdout.splitlines()[-20:])
+            raise CliFailed(f"{spec.name} を入れられませんでした（{' '.join(argv[:3])}、exit {r.returncode}）:\n{tail}")
+    if not cli.is_file():
+        raise CliFailed(f"{spec.package} を入れましたが、{cli} がありません")
+    marker.write_text(spec.package + "\n")
+    on_log(f"[MOSS Image] {spec.name} を入れました")
+    return str(cli)
+
+
+def _runs(py: Path) -> bool:
+    try:
+        return subprocess.run([str(py), "-c", ""], capture_output=True, timeout=30).returncode == 0
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+
+
+def resolve_bin(spec: CliSpec, *, env: Mapping[str, str] = os.environ, home: Path | None = None,
+                root: Path = NODE_DIR, uv=_AUTO, python: str = sys.executable,
+                on_log: Callable[[str], None] = print) -> str:
+    """入っている CLI があればそれを、無ければノード専用の仮想環境を作って使う"""
+    try:
+        return find_bin(spec, env=env, home=home or Path.home())
+    except CliNotFound:
+        return ensure_venv(spec, root, uv=find_uv(env) if uv is _AUTO else uv, python=python, on_log=on_log)
 
 
 def _common(p: dict) -> list[str]:
@@ -164,9 +231,9 @@ def generate(kind: str, p: dict, **run_kw) -> Path:
         if kind == "mflux":
             prompt_file = Path(d) / "prompt.txt"
             prompt_file.write_text(p["text"], encoding="utf-8")
-            argv = [find_bin(MFLUX), *build_mflux_args(p, prompt_file, out)]
+            argv = [resolve_bin(MFLUX), *build_mflux_args(p, prompt_file, out)]
         elif kind == "felix":
-            argv = [find_bin(FELIX), *build_felix_args(p, out)]
+            argv = [resolve_bin(FELIX), *build_felix_args(p, out)]
         else:
             raise ValueError(kind)
         run_cli(argv, **run_kw)

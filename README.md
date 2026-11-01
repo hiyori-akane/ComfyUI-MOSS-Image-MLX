@@ -13,40 +13,37 @@
 
 - Apple Silicon の Mac（MLX が必要です）
 - ComfyUI（デスクトップ版で確認しました）
-- [uv](https://docs.astral.sh/uv/)
 
-## CLI を入れる
+## 入れる
 
-CLI は `uv tool install` で、ComfyUI とは別の環境に入れます。ComfyUI の Python 環境には何も入れません。
-
-```sh
-# mflux：PyPI の 0.24.0 は長いプロンプト（4コマの JSON など）で真っ黒になる。修正の入った main から入れる
-uv tool install git+https://github.com/mflux-community/mflux
-# 0.24.1 以降が出たら、こちらでよい
-# uv tool install mflux
-
-# felix 版
-uv tool install moss-image-mlx
-```
-
-使うほうだけ入れれば動きます。ノードは CLI を次の順に探します。
-
-1. 環境変数 `MOSS_MFLUX_BIN` / `MOSS_FELIX_BIN`（CLI のフルパス）
-2. `PATH`
-3. `~/.local/bin`（`uv tool install` の既定の場所）
-
-見つからないときは、入れるためのコマンドをエラーに表示します。
-
-## ノードを入れる
-
-このフォルダを ComfyUI の `custom_nodes/` に置き、ComfyUI を再起動します。
+ComfyUI の `custom_nodes/` で clone して、ComfyUI を再起動します。
 
 ```sh
 cd ~/ComfyUI/custom_nodes   # ComfyUI の custom_nodes フォルダ
 git clone https://github.com/hiyori-akane/ComfyUI-MOSS-Image-MLX.git
 ```
 
-ノードは「MOSS Image (MLX)」の分類に出ます。
+ノードは「MOSS Image (MLX)」の分類に出ます。CLI を別に入れる必要はありません。
+
+### CLI は初回の実行時に自動で入る
+
+ノードを初めて実行すると、ノードのフォルダの中にノード専用の Python 環境（`.venv-mflux/`、`.venv-felix/`）を作り、CLI を入れます。
+
+- 入るもの：mflux は修正の入った main のコミット（`54619d6`）、felix 版は `moss-image-mlx==0.2.0`。PyPI の mflux 0.24.0 は、長いプロンプト（4コマの JSON など）で真っ黒になるためです。
+- ComfyUI の Python 環境には何も入れません。felix 版の `transformers>=5.3` などが、ComfyUI や他のカスタムノードとぶつからないようにするためです。
+- 環境は [uv](https://docs.astral.sh/uv/) で作ります（Python 3.12）。uv は Comfy Desktop に同梱されています。uv が無いときは、ComfyUI の Python（3.11 以上が必要）の `venv` と `pip` で作ります。
+- 初回はパッケージの取得に数分かかります。様子は ComfyUI のログに出ます。モデルの重みは、さらに CLI が初回に Hugging Face から取ってきます。
+- 環境が壊れたとき（基になる Python が消えたなど）は、次の実行で作り直します。手で作り直すなら `.venv-*` フォルダを消します。
+
+### 自分で入れた CLI を使う
+
+自分で入れた CLI があれば、そちらを使います。ノードは次の順に探し、どこにも無いときだけ専用の環境を作ります。
+
+1. 環境変数 `MOSS_MFLUX_BIN` / `MOSS_FELIX_BIN`（CLI のフルパス）
+2. `PATH`
+3. `~/.local/bin`（`uv tool install` の既定の場所）
+
+uv の場所は、環境変数 `MOSS_UV` で指定できます。
 
 ## 使い方
 
