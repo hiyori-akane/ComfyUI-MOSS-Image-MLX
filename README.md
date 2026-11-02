@@ -63,6 +63,15 @@ uv の場所は、環境変数 `MOSS_UV` で指定できます。
 - 実行中に ComfyUI でキャンセルすると、CLI のプロセスを止めます。
 - 初回はモデルの重みを Hugging Face から取ってきます（数十 GB、時間がかかります）。felix 版の重みは [`VisualInference/MOSS-Image-SFT-MLX-8bit`](https://huggingface.co/VisualInference/MOSS-Image-SFT-MLX-8bit) です。重みのライセンスは各配布元で確認してください。
 
+## ワークフローの例
+
+[`example_workflows/`](./example_workflows/) に、日本語のセリフ入り4コマ（640x2560）の例があります。PNG か JSON を ComfyUI の画面にドラッグ＆ドロップすると、ワークフローが開きます。
+
+| ファイル | ノード | 設定 |
+|---|---|---|
+| `moss_mflux_4koma.png` / `.json` | MOSS Image (mflux) | sft、q8、30 steps |
+| `moss_felix_4koma.png` / `.json` | MOSS Image (felix) | 8bit、turbo |
+
 ## 実測（M1 Max 64GB）
 
 | ノード | 条件 | 4コマ 640x2560 | ピークメモリ |

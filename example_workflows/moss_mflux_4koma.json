@@ -1,0 +1,102 @@
+{
+  "last_node_id": 2,
+  "last_link_id": 1,
+  "nodes": [
+    {
+      "id": 1,
+      "type": "MossImageMflux",
+      "pos": [
+        60,
+        80
+      ],
+      "size": [
+        420,
+        620
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [
+            1
+          ],
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "MossImageMflux"
+      },
+      "widgets_values": [
+        "{\"scene_type\": \"Four-panel yonkoma comic\", \"gen_brief\": \"Create a finished Japanese-style yonkoma (4-panel) gag comic in a tall 1:4 format, cute anime illustration style with clean lineart and soft cel shading. The heroine is Akane, an adult woman with long pink hair, pink eyes with heart-shaped pupils, wearing a white blouse and a pink apron; keep her design identical in all four panels. Classic structure: setup, development, twist, punchline.\", \"elements\": [{\"type\": \"obj\", \"salience\": \"primary\", \"identity\": \"Four-panel vertical yonkoma comic\", \"shape\": \"Four equal stacked panels, slim white gutters, black borders, expressive anime cartoon acting, Readable Japanese speech balloons, hand-lettered black Japanese text, natural kana and kanji. Consistent character in every panel.\", \"colors\": [{\"color\": \"Paper\", \"hex\": \"#FFFFFF\"}, {\"color\": \"Ink\", \"hex\": \"#2A2A33\"}, {\"color\": \"Akane pink\", \"hex\": \"#F49AC1\"}], \"bbox\": [-1280, -320, 1280, 320]}, {\"type\": \"text\", \"text\": \"今日こそ完璧なケーキを焼くぞ！\", \"bbox\": [-1256, -290, -1118, 290], \"shape\": \"White rounded speech balloon at the top of the panel, black lettering.\", \"is_watermark\": false}, {\"type\": \"obj\", \"salience\": \"secondary\", \"identity\": \"Panel one: the plan\", \"shape\": \"Akane in her kitchen holds up a recipe card with sparkling eyes; flour bag, eggs and a mixing bowl on the counter; morning light.\", \"bbox\": [-1268, -308, -648, 308]}, {\"type\": \"text\", \"text\": \"まぜまぜ…まぜまぜ…！\", \"bbox\": [-616, -290, -478, 290], \"shape\": \"White rounded speech balloon at the top of the panel, black lettering.\", \"is_watermark\": false}, {\"type\": \"obj\", \"salience\": \"secondary\", \"identity\": \"Panel two: the struggle\", \"shape\": \"Akane whisks furiously, flour cloud everywhere, cream on her cheek, the bowl tilting; comic sweat drops and motion lines.\", \"bbox\": [-628, -308, -8, 308]}, {\"type\": \"text\", \"text\": \"……あれ？なんで黒いの？\", \"bbox\": [20, -290, 158, 290], \"shape\": \"White rounded speech balloon at the top of the panel, black lettering.\", \"is_watermark\": false}, {\"type\": \"obj\", \"salience\": \"secondary\", \"identity\": \"Panel three: the disaster\", \"shape\": \"The oven door opens and a lopsided, puffed-up cake with a burnt top appears; Akane freezes in shock, smoke curls, dramatic shock lines.\", \"bbox\": [8, -308, 628, 308]}, {\"type\": \"text\", \"text\": \"でも、愛の味がする！\", \"bbox\": [660, -290, 798, 290], \"shape\": \"White rounded speech balloon at the top of the panel, black lettering.\", \"is_watermark\": false}, {\"type\": \"obj\", \"salience\": \"secondary\", \"identity\": \"Panel four: the payoff\", \"shape\": \"Akane happily eats the burnt cake at the table with a fork, heart-shaped pupils glowing, little hearts floating; warm cozy lighting.\", \"bbox\": [648, -308, 1268, 308]}], \"must_not\": [\"not a horizontal strip or a grid\", \"not a different character design between panels\"], \"palette\": [\"#FFFFFF\", \"#2A2A33\", \"#F49AC1\", \"#FFE3B3\", \"#8A5A3C\"], \"bbox_coord_space\": \"abs_centralized\"}",
+        "",
+        1,
+        "fixed",
+        30,
+        5.0,
+        640,
+        2560,
+        "sft",
+        "8",
+        "",
+        0.7,
+        "",
+        1.0
+      ]
+    },
+    {
+      "id": 2,
+      "type": "SaveImage",
+      "pos": [
+        540,
+        80
+      ],
+      "size": [
+        320,
+        620
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 1
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "Node name for S&R": "SaveImage"
+      },
+      "widgets_values": [
+        "MOSS_mflux_4koma"
+      ]
+    }
+  ],
+  "links": [
+    [
+      1,
+      1,
+      0,
+      2,
+      0,
+      "IMAGE"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 1,
+      "offset": [
+        0,
+        0
+      ]
+    }
+  },
+  "version": 0.4
+}
